@@ -1,3 +1,6 @@
+# 4.1.2
+- Support intl v0.20.
+
 # 4.1.1
 - updated the homepage link to the correct url.
 
