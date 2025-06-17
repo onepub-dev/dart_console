@@ -1,5 +1,7 @@
 # 4.1.2
 - Support intl v0.20.
+- the table column layout was ignoring the columnWidth. The column width
+is now honoured.
 
 # 4.1.1
 - updated the homepage link to the correct url.
