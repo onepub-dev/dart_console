@@ -45,7 +45,6 @@ extension StringUtils on String {
         final padding = ' ' * (width - displayWidth);
         return padding + this;
       case TextAlignment.left:
-      default:
         final padding = ' ' * (width - displayWidth);
         return this + padding;
     }
