@@ -9,8 +9,10 @@ void main() {
 
   console.writeLine();
 
-  console.writeLine('This console window has ${console.windowWidth} cols and '
-      '${console.windowHeight} rows.');
+  console.writeLine(
+    'This console window has ${console.windowWidth} cols and '
+    '${console.windowHeight} rows.',
+  );
   console.writeLine();
 
   console.writeLine('This text is left aligned.', TextAlignment.left);

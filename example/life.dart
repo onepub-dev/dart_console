@@ -12,8 +12,11 @@ final int cols = console.windowWidth;
 final int size = rows * cols;
 
 final temp = List<bool>.filled(size, false, growable: false);
-final data =
-    List<bool>.generate(size, (i) => random.nextBool(), growable: false);
+final data = List<bool>.generate(
+  size,
+  (i) => random.nextBool(),
+  growable: false,
+);
 
 final buffer = StringBuffer();
 

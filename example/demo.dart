@@ -21,8 +21,10 @@ List<Function> demoScreens = <Function>[
     console.writeLine('L O A D I N G', TextAlignment.center);
 
     console.cursorPosition = Coordinate(row + 2, 0);
-    console.writeLine('Please wait while we make you some avocado toast...',
-        TextAlignment.center);
+    console.writeLine(
+      'Please wait while we make you some avocado toast...',
+      TextAlignment.center,
+    );
 
     console.hideCursor();
 
@@ -54,8 +56,10 @@ List<Function> demoScreens = <Function>[
 
     console.writeLine();
 
-    console.writeLine('This console window has ${console.windowWidth} cols and '
-        '${console.windowHeight} rows.');
+    console.writeLine(
+      'This console window has ${console.windowWidth} cols and '
+      '${console.windowHeight} rows.',
+    );
     console.writeLine();
 
     console.writeLine('This text is left aligned.', TextAlignment.left);
@@ -82,7 +86,9 @@ List<Function> demoScreens = <Function>[
     console.setBackgroundColor(ConsoleColor.red);
     console.setForegroundColor(ConsoleColor.white);
     console.writeLine(
-        'ANSI Extended 256-Color Foreground Test', TextAlignment.center);
+      'ANSI Extended 256-Color Foreground Test',
+      TextAlignment.center,
+    );
     console.resetColorAttributes();
 
     console.writeLine();
@@ -104,7 +110,9 @@ List<Function> demoScreens = <Function>[
     console.setBackgroundColor(ConsoleColor.green);
     console.setForegroundColor(ConsoleColor.white);
     console.writeLine(
-        'ANSI Extended 256-Color Background Test', TextAlignment.center);
+      'ANSI Extended 256-Color Background Test',
+      TextAlignment.center,
+    );
     console.resetColorAttributes();
 
     console.writeLine();
@@ -156,8 +164,10 @@ List<Function> demoScreens = <Function>[
     const maxStarsOnScreen = 250;
 
     void addStar() {
-      final star = Coordinate(rng.nextInt(console.windowHeight - 1) + 1,
-          rng.nextInt(console.windowWidth));
+      final star = Coordinate(
+        rng.nextInt(console.windowHeight - 1) + 1,
+        rng.nextInt(console.windowWidth),
+      );
       console.cursorPosition = star;
       console.write('*');
       stars.addLast(star);

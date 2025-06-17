@@ -58,7 +58,7 @@ enum ControlCharacter {
   // ignore: constant_identifier_names
   F4,
 
-  unknown
+  unknown,
 }
 
 /// A representation of a keystroke.

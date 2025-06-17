@@ -58,12 +58,13 @@ class ProgressBar {
 
   final _console = Console();
 
-  ProgressBar(
-      {this.maxValue = 100,
-      Coordinate? startCoordinate,
-      int? barWidth,
-      this.showSpinner = true,
-      this.tickCharacters = const <String>['-', '\\', '|', '/']}) {
+  ProgressBar({
+    this.maxValue = 100,
+    Coordinate? startCoordinate,
+    int? barWidth,
+    this.showSpinner = true,
+    this.tickCharacters = const <String>['-', '\\', '|', '/'],
+  }) {
     if (!_console.hasTerminal) {
       _shouldDrawProgress = false;
     } else {
@@ -100,14 +101,18 @@ class ProgressBar {
       return;
     }
     _tickCount++;
-    final fractionComplete =
-        math.max(0, _tickCount * _innerWidth ~/ maxValue - 1);
+    final fractionComplete = math.max(
+      0,
+      _tickCount * _innerWidth ~/ maxValue - 1,
+    );
     final remaining = _innerWidth - fractionComplete - 1;
-    final spinner =
-        showSpinner ? tickCharacters[_tickCount % tickCharacters.length] : ' ';
+    final spinner = showSpinner
+        ? tickCharacters[_tickCount % tickCharacters.length]
+        : ' ';
 
     _printProgressBar(
-        '[${tickCharacters[0] * fractionComplete}$spinner${' ' * remaining}]');
+      '[${tickCharacters[0] * fractionComplete}$spinner${' ' * remaining}]',
+    );
   }
 
   void _printProgressBar(String progressBar) {

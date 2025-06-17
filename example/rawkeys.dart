@@ -13,7 +13,8 @@ void main() {
   console.writeLine('Purely for testing purposes.');
   console.writeLine();
   console.writeLine(
-      'This method echos what stdin reads. Useful for testing unusual terminals.');
+    'This method echos what stdin reads. Useful for testing unusual terminals.',
+  );
   console.writeLine("Press 'q' to return to the command prompt.");
   console.rawMode = true;
 
@@ -27,7 +28,8 @@ void main() {
       print('${codeUnit.toRadixString(16)}\r');
     } else {
       print(
-          '${codeUnit.toRadixString(16)} (${String.fromCharCode(codeUnit)})\r');
+        '${codeUnit.toRadixString(16)} (${String.fromCharCode(codeUnit)})\r',
+      );
     }
 
     if (String.fromCharCode(codeUnit) == 'q') {

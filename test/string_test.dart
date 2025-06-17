@@ -32,14 +32,18 @@ void main() {
     final yellowAttr = ConsoleColor.brightYellow.ansiSetForegroundColorSequence;
     final yellowHello = yellowAttr + hello + ansiResetColor;
 
-    expect(yellowHello.stripEscapeCharacters().alignText(width: 7),
-        equals('Hello  '));
+    expect(
+      yellowHello.stripEscapeCharacters().alignText(width: 7),
+      equals('Hello  '),
+    );
   });
 
   test('Align odd length in even space', () {
     const char = 'c';
-    expect(char.alignText(width: 4, alignment: TextAlignment.center),
-        equals('  c '));
+    expect(
+      char.alignText(width: 4, alignment: TextAlignment.center),
+      equals('  c '),
+    );
   });
 
   test('Align color text single line centered', () {
@@ -53,10 +57,14 @@ void main() {
     final padding = ((paddedWidth - yellowHello.displayWidth) / 2).round();
     expect(padding, equals(1));
 
-    expect(yellowHello.stripEscapeCharacters().alignText(width: 7).length,
-        equals(7));
-    expect(yellowHello.alignText(width: 7, alignment: TextAlignment.center),
-        equals(' \x1B[93mHello\x1B[m '));
+    expect(
+      yellowHello.stripEscapeCharacters().alignText(width: 7).length,
+      equals(7),
+    );
+    expect(
+      yellowHello.alignText(width: 7, alignment: TextAlignment.center),
+      equals(' \x1B[93mHello\x1B[m '),
+    );
   });
 
   test('Strip escape characters', () {
@@ -64,7 +72,9 @@ void main() {
     final colorCal = calendar.toString();
 
     final monoCal = colorCal.stripEscapeCharacters();
-    expect(monoCal, equals('''
+    expect(
+      monoCal,
+      equals('''
                 August 1969                
 ╭─────┬─────┬─────┬─────┬─────┬─────┬─────╮
 │ Sun │ Mon │ Tue │ Wed │ Thu │ Fri │ Sat │
@@ -76,7 +86,8 @@ void main() {
 │  24 │  25 │  26 │  27 │  28 │  29 │  30 │
 │  31 │     │     │     │     │     │     │
 ╰─────┴─────┴─────┴─────┴─────┴─────┴─────╯
-'''));
+'''),
+    );
   });
 
   test('Superscript', () {

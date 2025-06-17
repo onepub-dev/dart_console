@@ -21,18 +21,21 @@ class TermLibWindows implements TermLib {
   @override
   int setWindowHeight(int height) {
     throw UnsupportedError(
-        'Setting window height is not supported for Windows terminals.');
+      'Setting window height is not supported for Windows terminals.',
+    );
   }
 
   @override
   int setWindowWidth(int width) {
     throw UnsupportedError(
-        'Setting window width is not supported for Windows terminals.');
+      'Setting window width is not supported for Windows terminals.',
+    );
   }
 
   @override
   void enableRawMode() {
-    final dwMode = (~ENABLE_ECHO_INPUT) &
+    final dwMode =
+        (~ENABLE_ECHO_INPUT) &
         (~ENABLE_PROCESSED_INPUT) &
         (~ENABLE_LINE_INPUT) &
         (~ENABLE_WINDOW_INPUT);
@@ -41,7 +44,8 @@ class TermLibWindows implements TermLib {
 
   @override
   void disableRawMode() {
-    final dwMode = ENABLE_ECHO_INPUT &
+    final dwMode =
+        ENABLE_ECHO_INPUT &
         ENABLE_EXTENDED_FLAGS &
         ENABLE_INSERT_MODE &
         ENABLE_LINE_INPUT &
@@ -80,13 +84,23 @@ class TermLibWindows implements TermLib {
 
       final consoleSize = bufferInfo.dwSize.X * bufferInfo.dwSize.Y;
 
-      FillConsoleOutputCharacter(outputHandle, ' '.codeUnitAt(0), consoleSize,
-          origin.ref, pCharsWritten);
+      FillConsoleOutputCharacter(
+        outputHandle,
+        ' '.codeUnitAt(0),
+        consoleSize,
+        origin.ref,
+        pCharsWritten,
+      );
 
       GetConsoleScreenBufferInfo(outputHandle, pBufferInfo);
 
-      FillConsoleOutputAttribute(outputHandle, bufferInfo.wAttributes,
-          consoleSize, origin.ref, pCharsWritten);
+      FillConsoleOutputAttribute(
+        outputHandle,
+        bufferInfo.wAttributes,
+        consoleSize,
+        origin.ref,
+        pCharsWritten,
+      );
 
       SetConsoleCursorPosition(outputHandle, origin.ref);
     } finally {

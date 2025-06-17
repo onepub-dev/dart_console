@@ -8,15 +8,19 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 
 // int tcgetattr(int, struct termios *);
-typedef TCGetAttrNative = Int32 Function(
-    Int32 fildes, Pointer<TermIOS> termios);
+typedef TCGetAttrNative =
+    Int32 Function(Int32 fildes, Pointer<TermIOS> termios);
 typedef TCGetAttrDart = int Function(int fildes, Pointer<TermIOS> termios);
 
 // int tcsetattr(int, int, const struct termios *);
-typedef TCSetAttrNative = Int32 Function(
-    Int32 fildes, Int32 optional_actions, Pointer<TermIOS> termios);
-typedef TCSetAttrDart = int Function(
-    int fildes, int optional_actions, Pointer<TermIOS> termios);
+typedef TCSetAttrNative =
+    Int32 Function(
+      Int32 fildes,
+      Int32 optional_actions,
+      Pointer<TermIOS> termios,
+    );
+typedef TCSetAttrDart =
+    int Function(int fildes, int optional_actions, Pointer<TermIOS> termios);
 
 const STDIN_FILENO = 0;
 const STDOUT_FILENO = 1;
@@ -116,10 +120,12 @@ void main() {
       ? DynamicLibrary.open('/usr/lib/libSystem.dylib')
       : DynamicLibrary.open('libc-2.28.so');
 
-  final tcgetattr =
-      libc.lookupFunction<TCGetAttrNative, TCGetAttrDart>('tcgetattr');
-  final tcsetattr =
-      libc.lookupFunction<TCSetAttrNative, TCSetAttrDart>('tcsetattr');
+  final tcgetattr = libc.lookupFunction<TCGetAttrNative, TCGetAttrDart>(
+    'tcgetattr',
+  );
+  final tcsetattr = libc.lookupFunction<TCSetAttrNative, TCSetAttrDart>(
+    'tcsetattr',
+  );
 
   final origTermIOS = calloc<TermIOS>();
   var result = tcgetattr(STDIN_FILENO, origTermIOS);
@@ -137,7 +143,8 @@ void main() {
     ..ref.c_ispeed = origTermIOS.ref.c_ispeed
     ..ref.c_oflag = origTermIOS.ref.c_ospeed
     ..ref.c_cc = origTermIOS.ref.c_cc
-    ..ref.c_cc[VMIN] = 0 // VMIN -- return each byte, or 0 for timeout
+    ..ref.c_cc[VMIN] =
+        0 // VMIN -- return each byte, or 0 for timeout
     ..ref.c_cc[VTIME] = 1; // VTIME -- 100ms timeout (unit is 1/10s)
 
   print('origTermIOS.c_iflag: 0b${origTermIOS.ref.c_iflag.toRadixString(2)}');

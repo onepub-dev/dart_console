@@ -28,15 +28,16 @@ String ansiSetExtendedForegroundColor(int color) => '\x1b[38;5;${color}m';
 String ansiSetExtendedBackgroundColor(int color) => '\x1b[48;5;${color}m';
 const ansiResetColor = '\x1b[m';
 
-String ansiSetTextStyles(
-    {bool bold = false,
-    bool faint = false,
-    bool italic = false,
-    bool underscore = false,
-    bool blink = false,
-    bool inverted = false,
-    bool invisible = false,
-    bool strikethru = false}) {
+String ansiSetTextStyles({
+  bool bold = false,
+  bool faint = false,
+  bool italic = false,
+  bool underscore = false,
+  bool blink = false,
+  bool inverted = false,
+  bool invisible = false,
+  bool strikethru = false,
+}) {
   final styles = <int>[];
   if (bold) styles.add(1);
   if (faint) styles.add(2);

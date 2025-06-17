@@ -56,7 +56,7 @@ class Console {
   // Use `Console.scrolling(recordBlanks: false)` to omit blank lines
   // from console history
   Console.scrolling({bool recordBlanks = true})
-      : _scrollbackBuffer = ScrollbackBuffer(recordBlanks: recordBlanks);
+    : _scrollbackBuffer = ScrollbackBuffer(recordBlanks: recordBlanks);
 
   /// Enables or disables raw mode.
   ///
@@ -265,8 +265,10 @@ class Console {
   /// the full set of colors. You may also run `examples/demo.dart` for this
   /// package, which provides a sample of each color in this list.
   void setForegroundExtendedColor(int colorValue) {
-    assert(colorValue >= 0 && colorValue <= 0xFF,
-        'Color must be a value between 0 and 255.');
+    assert(
+      colorValue >= 0 && colorValue <= 0xFF,
+      'Color must be a value between 0 and 255.',
+    );
 
     stdout.write(ansiSetExtendedForegroundColor(colorValue));
   }
@@ -277,8 +279,10 @@ class Console {
   /// the full set of colors. You may also run `examples/demo.dart` for this
   /// package, which provides a sample of each color in this list.
   void setBackgroundExtendedColor(int colorValue) {
-    assert(colorValue >= 0 && colorValue <= 0xFF,
-        'Color must be a value between 0 and 255.');
+    assert(
+      colorValue >= 0 && colorValue <= 0xFF,
+      'Color must be a value between 0 and 255.',
+    );
 
     stdout.write(ansiSetExtendedBackgroundColor(colorValue));
   }
@@ -286,16 +290,18 @@ class Console {
   /// Sets the text style.
   ///
   /// Note that not all styles may be supported by all terminals.
-  void setTextStyle(
-      {bool bold = false,
-      bool faint = false,
-      bool italic = false,
-      bool underscore = false,
-      bool blink = false,
-      bool inverted = false,
-      bool invisible = false,
-      bool strikethru = false}) {
-    stdout.write(ansiSetTextStyles(
+  void setTextStyle({
+    bool bold = false,
+    bool faint = false,
+    bool italic = false,
+    bool underscore = false,
+    bool blink = false,
+    bool inverted = false,
+    bool invisible = false,
+    bool strikethru = false,
+  }) {
+    stdout.write(
+      ansiSetTextStyles(
         bold: bold,
         faint: faint,
         italic: italic,
@@ -303,7 +309,9 @@ class Console {
         blink: blink,
         inverted: inverted,
         invisible: invisible,
-        strikethru: strikethru));
+        strikethru: strikethru,
+      ),
+    );
   }
 
   /// Resets all color attributes and text styles to the default terminal
@@ -343,11 +351,18 @@ class Console {
   }
 
   /// Writes a quantity of text to the console with padding to the given width.
-  void writeAligned(Object text,
-      [int? width, TextAlignment alignment = TextAlignment.left]) {
+  void writeAligned(
+    Object text, [
+    int? width,
+    TextAlignment alignment = TextAlignment.left,
+  ]) {
     final textAsString = text.toString();
-    stdout.write(textAsString.alignText(
-        width: width ?? textAsString.length, alignment: alignment));
+    stdout.write(
+      textAsString.alignText(
+        width: width ?? textAsString.length,
+        alignment: alignment,
+      ),
+    );
   }
 
   /// Reads a single key from the input, including a variety of control
@@ -529,11 +544,12 @@ class Console {
   /// A callback function may be supplied, as a peek-ahead for what is being
   /// entered. This is intended for scenarios like auto-complete, where the
   /// text field is coupled with some other content.
-  String? readLine(
-      {bool cancelOnBreak = false,
-      bool cancelOnEscape = false,
-      bool cancelOnEOF = false,
-      void Function(String text, Key lastPressed)? callback}) {
+  String? readLine({
+    bool cancelOnBreak = false,
+    bool cancelOnEscape = false,
+    bool cancelOnEOF = false,
+    void Function(String text, Key lastPressed)? callback,
+  }) {
     var buffer = '';
     var index = 0; // cursor position relative to buffer, not screen
 

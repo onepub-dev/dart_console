@@ -47,8 +47,10 @@ class TermLibUnix implements TermLib {
       ..ref.c_cflag = (origTermIOS.c_cflag & ~CSIZE) | CS8
       ..ref.c_lflag = origTermIOS.c_lflag & ~(ECHO | ICANON | IEXTEN | ISIG)
       ..ref.c_cc = origTermIOS.c_cc
-      ..ref.c_cc[VMIN] = 0 // VMIN -- return each byte, or 0 for timeout
-      ..ref.c_cc[VTIME] = 1 // VTIME -- 100ms timeout (unit is 1/10s)
+      ..ref.c_cc[VMIN] =
+          0 // VMIN -- return each byte, or 0 for timeout
+      ..ref.c_cc[VTIME] =
+          1 // VTIME -- 100ms timeout (unit is 1/10s)
       ..ref.c_ispeed = origTermIOS.c_ispeed
       ..ref.c_oflag = origTermIOS.c_ospeed;
 
@@ -68,10 +70,12 @@ class TermLibUnix implements TermLib {
         ? DynamicLibrary.open('/usr/lib/libSystem.dylib')
         : DynamicLibrary.open('libc.so.6');
 
-    tcgetattr =
-        _stdlib.lookupFunction<TCGetAttrNative, TCGetAttrDart>('tcgetattr');
-    tcsetattr =
-        _stdlib.lookupFunction<TCSetAttrNative, TCSetAttrDart>('tcsetattr');
+    tcgetattr = _stdlib.lookupFunction<TCGetAttrNative, TCGetAttrDart>(
+      'tcgetattr',
+    );
+    tcsetattr = _stdlib.lookupFunction<TCSetAttrNative, TCSetAttrDart>(
+      'tcsetattr',
+    );
 
     // store console mode settings so we can return them again as necessary
     _origTermIOSPointer = calloc<TermIOS>();
