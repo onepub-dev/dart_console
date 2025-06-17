@@ -2,7 +2,7 @@ A Dart library for building console applications.
 
 [![pub package](https://img.shields.io/pub/v/dart_console.svg)](https://pub.dev/packages/dart_console)
 [![Language](https://img.shields.io/badge/language-Dart-blue.svg)](https://dart.dev)
-![Build](https://github.com/timsneath/dart_console/workflows/Build/badge.svg)
+![Build](https://github.com/onepub-dev/dart_console/workflows/Build/badge.svg)
 [![codecov](https://codecov.io/gh/timsneath/dart_console/branch/main/graph/badge.svg?token=2N19H7OHZJ)](https://codecov.io/gh/timsneath/dart_console)
 
 This library contains a variety of useful functions for console application
@@ -90,4 +90,4 @@ Please file feature requests and bugs at the [issue tracker][tracker].
 [@mjohnsullivan]: https://github.com/mjohnsullivan
 [@sjindel-google]: https://github.com/sjindel-google
 [@erf]: https://github.com/erf
-[tracker]: https://github.com/timsneath/dart_console/issues
+[tracker]: https://github.com/onepub-dev/dart_console/issues
