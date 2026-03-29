@@ -661,7 +661,7 @@ class Console {
           // invalid UTF-8, wait for more characters
           continue;
         }
-        if (buffer.getDisplayWidth() + text.getDisplayWidth() <=
+        if (buffer.getRenderWidth() + text.getRenderWidth() <=
             bufferMaxLength) {
           buffer = buffer.substring(0, index) + text + buffer.substring(index);
           index += text.length;
@@ -673,7 +673,7 @@ class Console {
       write(buffer); // allow for backspace condition
       cursorPosition = Coordinate(
         screenRow,
-        screenColOffset + buffer.substring(0, index).getDisplayWidth(),
+        screenColOffset + buffer.substring(0, index).getRenderWidth(),
       );
 
       if (callback != null) callback(buffer, key);

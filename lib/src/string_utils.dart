@@ -124,9 +124,8 @@ extension StringUtils on String {
     return false;
   }
 
-  /// Calculates the actual display width of a string in the **terminal**.
-  /// (Solves cursor offset issues)
-  int getDisplayWidth() {
+  /// Calculate the render width of a string.
+  int getRenderWidth() {
     int width = 0;
     for (final char in characters) {
       width += char.isFullWidthCharacter() ? 2 : 1;
