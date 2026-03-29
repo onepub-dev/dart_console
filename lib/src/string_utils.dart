@@ -95,4 +95,42 @@ extension StringUtils on String {
     }
     return buffer.toString();
   }
+
+  /// Checks if a **single character** is a **full-width character** (occupies 2 columns).
+  /// Authoritative standard: Unicode East Asian Width (EAW)
+  bool isFullWidthCharacter() {
+    if (isEmpty) return false;
+    // Only handle single visual characters (avoid combining characters/corrupted text)
+    if (characters.length != 1) return false;
+
+    final code = runes.first;
+
+    // 1. CJK Unified Ideographs (all Chinese characters)
+    if (code >= 0x4E00 && code <= 0x9FFF) return true;
+    // 2. Japanese Hiragana and Katakana
+    if (code >= 0x3040 && code <= 0x30FF) return true;
+    // 3. Korean Hangul Syllables
+    if (code >= 0xAC00 && code <= 0xD7AF) return true;
+    // 4. Full-width punctuation marks
+    if (code >= 0x3000 && code <= 0x303F) return true;
+    // 5. Full-width letters/digits/symbols (Ａ Ｂ Ｃ １２３！＠＃)
+    if (code >= 0xFF00 && code <= 0xFFEF) return true;
+    // 6. Emoji & special symbols (occupy 2 columns in terminal)
+    if (code >= 0x1F600 && code <= 0x1F64F) return true; // Emoticons
+    if (code >= 0x1F300 && code <= 0x1F5FF) return true; // Icons
+    // 7. Full-width space (especially important)
+    if (code == 0x3000) return true;
+
+    return false;
+  }
+
+  /// Calculates the actual display width of a string in the **terminal**.
+  /// (Solves cursor offset issues)
+  int getDisplayWidth() {
+    int width = 0;
+    for (final char in characters) {
+      width += char.isFullWidthCharacter() ? 2 : 1;
+    }
+    return width;
+  }
 }

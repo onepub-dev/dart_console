@@ -3,6 +3,7 @@
 // Contains the primary API for dart_console, exposed through the `Console`
 // class.
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -56,7 +57,7 @@ class Console {
   // Use `Console.scrolling(recordBlanks: false)` to omit blank lines
   // from console history
   Console.scrolling({bool recordBlanks = true})
-    : _scrollbackBuffer = ScrollbackBuffer(recordBlanks: recordBlanks);
+      : _scrollbackBuffer = ScrollbackBuffer(recordBlanks: recordBlanks);
 
   /// Enables or disables raw mode.
   ///
@@ -558,10 +559,13 @@ class Console {
 
     final bufferMaxLength = windowWidth - screenColOffset - 3;
 
+    final utf8Buffer = <int>[];
+
     while (true) {
       final key = readKey();
 
       if (key.isControl) {
+        utf8Buffer.clear();
         switch (key.controlChar) {
           case ControlCharacter.enter:
             if (_scrollbackBuffer != null) {
@@ -648,22 +652,29 @@ class Console {
             break;
         }
       } else {
-        if (buffer.length < bufferMaxLength) {
-          if (index == buffer.length) {
-            buffer += key.char;
-            index++;
-          } else {
-            buffer =
-                buffer.substring(0, index) + key.char + buffer.substring(index);
-            index++;
-          }
+        utf8Buffer.addAll(key.char.codeUnits);
+        final String text;
+        try {
+          text = utf8.decode(utf8Buffer);
+          utf8Buffer.clear();
+        } catch (_) {
+          // invalid UTF-8, wait for more characters
+          continue;
+        }
+        if (buffer.getDisplayWidth() + text.getDisplayWidth() <=
+            bufferMaxLength) {
+          buffer = buffer.substring(0, index) + text + buffer.substring(index);
+          index += text.length;
         }
       }
 
       cursorPosition = Coordinate(screenRow, screenColOffset);
       eraseCursorToEnd();
       write(buffer); // allow for backspace condition
-      cursorPosition = Coordinate(screenRow, screenColOffset + index);
+      cursorPosition = Coordinate(
+        screenRow,
+        screenColOffset + buffer.substring(0, index).getDisplayWidth(),
+      );
 
       if (callback != null) callback(buffer, key);
     }
