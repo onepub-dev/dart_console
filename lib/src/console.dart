@@ -357,13 +357,12 @@ class Console {
     int? width,
     TextAlignment alignment = TextAlignment.left,
   ]) {
-    final textAsString = text.toString();
-    stdout.write(
-      textAsString.alignText(
-        width: width ?? textAsString.length,
-        alignment: alignment,
-      ),
+    var textAsString = text.toString();
+    textAsString = textAsString.alignText(
+      width: width ?? textAsString.displayWidth,
+      alignment: alignment,
     );
+    stdout.write(textAsString);
   }
 
   /// Reads a single key from the input, including a variety of control
@@ -661,8 +660,7 @@ class Console {
           // invalid UTF-8, wait for more characters
           continue;
         }
-        if (buffer.getRenderWidth() + text.getRenderWidth() <=
-            bufferMaxLength) {
+        if (buffer.displayWidth + text.displayWidth <= bufferMaxLength) {
           buffer = buffer.substring(0, index) + text + buffer.substring(index);
           index += text.length;
         }
@@ -673,7 +671,7 @@ class Console {
       write(buffer); // allow for backspace condition
       cursorPosition = Coordinate(
         screenRow,
-        screenColOffset + buffer.substring(0, index).getRenderWidth(),
+        screenColOffset + buffer.substring(0, index).displayWidth,
       );
 
       if (callback != null) callback(buffer, key);

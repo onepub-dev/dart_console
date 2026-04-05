@@ -11,6 +11,14 @@ void main() {
     expect(yellowHello.displayWidth, equals(hello.length));
   });
 
+  test('EastAsian displayWidth', () {
+    const hello = '你好';
+    final yellowAttr = ConsoleColor.brightYellow.ansiSetForegroundColorSequence;
+    final yellowHello = yellowAttr + hello + ansiResetColor;
+
+    expect(yellowHello.displayWidth, equals(hello.length * 2));
+  });
+
   test('Wrap short text', () {
     const hello = 'Hello';
     expect(hello.wrapText(7), equals('Hello'));
@@ -19,6 +27,11 @@ void main() {
   test('Wrap long text', () {
     const hello = 'HELLO HELLO Hello Hello hello hello';
     expect(hello.wrapText(11), equals('HELLO HELLO\nHello Hello\nhello hello'));
+  });
+
+  test('Wrap EastAsian text', () {
+    const hello = '你好，很高兴(Happy)见到你。';
+    expect(hello.wrapText(15), equals('你好，很高兴(H-\nappy)见到你。'));
   });
 
   test('Align plain text single line left', () {
