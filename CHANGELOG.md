@@ -1,3 +1,8 @@
+# 4.1.4
+- Fix #6: Enhance string utilities with full-width character detection and accurate display width calculation
+   Thanks to goweii for the pathc.
+- Refactor string utilities: rename displayWidth to renderWidth and update Console class to use new method
+
 # 4.1.3
 - fixed links in the readme and pubspec.yaml
 
