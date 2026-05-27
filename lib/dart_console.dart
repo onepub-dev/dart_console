@@ -33,7 +33,8 @@
 /// The class works on any desktop environment that supports ANSI escape
 /// characters, and has some fallback capabilities for older versions of Windows
 /// that use traditional console APIs.
-library dart_console;
+// ignore: unnecessary_library_name
+library;
 
 export 'src/calendar.dart';
 export 'src/console.dart';

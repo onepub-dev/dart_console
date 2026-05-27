@@ -57,7 +57,7 @@ class Console {
   // Use `Console.scrolling(recordBlanks: false)` to omit blank lines
   // from console history
   Console.scrolling({bool recordBlanks = true})
-      : _scrollbackBuffer = ScrollbackBuffer(recordBlanks: recordBlanks);
+    : _scrollbackBuffer = ScrollbackBuffer(recordBlanks: recordBlanks);
 
   /// Enables or disables raw mode.
   ///
@@ -569,7 +569,7 @@ class Console {
         switch (key.controlChar) {
           case ControlCharacter.enter:
             if (_scrollbackBuffer != null) {
-              _scrollbackBuffer!.add(buffer);
+              _scrollbackBuffer.add(buffer);
             }
             writeLine();
             return buffer;
@@ -607,13 +607,13 @@ class Console {
             break;
           case ControlCharacter.arrowUp:
             if (_scrollbackBuffer != null) {
-              buffer = _scrollbackBuffer!.up(buffer);
+              buffer = _scrollbackBuffer.up(buffer);
               index = buffer.length;
             }
             break;
           case ControlCharacter.arrowDown:
             if (_scrollbackBuffer != null) {
-              final temp = _scrollbackBuffer!.down();
+              final temp = _scrollbackBuffer.down();
               if (temp != null) {
                 buffer = temp;
                 index = buffer.length;

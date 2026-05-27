@@ -30,3 +30,4 @@ coverage/
 # Test scratchpad for development
 example/scratch.dart.failed_tracker
 .failed_tracker
+release.notes.tmp.md
