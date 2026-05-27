@@ -1,3 +1,8 @@
+# 5.0.0
+  - *BREAKING*: Raise the minimum Dart SDK constraint to `>=3.10.0`.
+  - *BREAKING*: Update `win32` dependency support to `>=6.0.1 <7.0.0`.
+  - Update Windows FFI bindings for the `win32` 6.x API.
+  
 # 4.1.4
 - Fix #6: Enhance string utilities with full-width character detection and accurate display width calculation
    Thanks to goweii for the pathc.
