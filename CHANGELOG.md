@@ -1,3 +1,6 @@
+# Unreleased
+  - Fix #5: Add `Console.readKeys()` for asynchronously streaming key input.
+
 # 5.0.0
   - *BREAKING*: Raise the minimum Dart SDK constraint to `>=3.10.0`.
   - *BREAKING*: Update `win32` dependency support to `>=6.0.1 <7.0.0`.
