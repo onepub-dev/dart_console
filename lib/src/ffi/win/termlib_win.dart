@@ -18,6 +18,26 @@ class TermLibWindows implements TermLib {
   late final HANDLE inputHandle;
   late final HANDLE outputHandle;
 
+  int? _readWindowSize(int Function(CONSOLE_SCREEN_BUFFER_INFO info) value) {
+    final pBufferInfo = calloc<CONSOLE_SCREEN_BUFFER_INFO>();
+    try {
+      if (!GetConsoleScreenBufferInfo(outputHandle, pBufferInfo).value) {
+        return null;
+      }
+      return value(pBufferInfo.ref);
+    } finally {
+      calloc.free(pBufferInfo);
+    }
+  }
+
+  @override
+  int? get windowHeight =>
+      _readWindowSize((info) => info.srWindow.Bottom - info.srWindow.Top + 1);
+
+  @override
+  int? get windowWidth =>
+      _readWindowSize((info) => info.srWindow.Right - info.srWindow.Left + 1);
+
   @override
   int setWindowHeight(int height) {
     throw UnsupportedError(

@@ -64,6 +64,9 @@ const int TCSAFLUSH = 2; // drain output, flush input
 const int VMIN = 16; // minimum number of characters to receive
 const int VTIME = 17; // time in 1/10s before returning
 
+const int TIOCGWINSZ_LINUX = 0x5413;
+const int TIOCGWINSZ_MACOS = 0x40087468;
+
 // typedef unsigned long   tcflag_t;
 typedef tcflag_t = UnsignedLong;
 
@@ -104,16 +107,44 @@ base class TermIOS extends Struct {
   external int c_ospeed;
 }
 
+// struct winsize {
+//   unsigned short ws_row;
+//   unsigned short ws_col;
+//   unsigned short ws_xpixel;
+//   unsigned short ws_ypixel;
+// };
+base class WinSize extends Struct {
+  @UnsignedShort()
+  external int ws_row;
+  @UnsignedShort()
+  external int ws_col;
+  @UnsignedShort()
+  external int ws_xpixel;
+  @UnsignedShort()
+  external int ws_ypixel;
+}
+
 // int tcgetattr(int, struct termios *);
-typedef TCGetAttrNative = Int32 Function(
-    Int32 fildes, Pointer<TermIOS> termios);
+typedef TCGetAttrNative =
+    Int32 Function(Int32 fildes, Pointer<TermIOS> termios);
 typedef TCGetAttrDart = int Function(int fildes, Pointer<TermIOS> termios);
 
 // int tcsetattr(int, int, const struct termios *);
-typedef TCSetAttrNative = Int32 Function(
-  Int32 fildes,
-  Int32 optional_actions,
-  Pointer<TermIOS> termios,
-);
-typedef TCSetAttrDart = int Function(
-    int fildes, int optional_actions, Pointer<TermIOS> termios);
+typedef TCSetAttrNative =
+    Int32 Function(
+      Int32 fildes,
+      Int32 optional_actions,
+      Pointer<TermIOS> termios,
+    );
+typedef TCSetAttrDart =
+    int Function(int fildes, int optional_actions, Pointer<TermIOS> termios);
+
+// int ioctl(int, unsigned long, ...);
+typedef IOCtlNative =
+    Int32 Function(
+      Int32 fildes,
+      UnsignedLong request,
+      Pointer<WinSize> winsize,
+    );
+typedef IOCtlDart =
+    int Function(int fildes, int request, Pointer<WinSize> winsize);
