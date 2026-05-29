@@ -1,3 +1,7 @@
+# Unreleased
+  - Fix #9: Query console window size through platform terminal APIs so tmux
+    panes report their pane dimensions instead of the outer terminal size.
+
 # 5.0.0
   - *BREAKING*: Raise the minimum Dart SDK constraint to `>=3.10.0`.
   - *BREAKING*: Update `win32` dependency support to `>=6.0.1 <7.0.0`.

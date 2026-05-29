@@ -23,6 +23,32 @@ class TermLibUnix implements TermLib {
 
   late final TCGetAttrDart tcgetattr;
   late final TCSetAttrDart tcsetattr;
+  late final IOCtlDart ioctl;
+
+  int get _windowSizeRequest =>
+      Platform.isMacOS ? TIOCGWINSZ_MACOS : TIOCGWINSZ_LINUX;
+
+  int? _readWindowSize(int Function(WinSize size) value) {
+    final winsize = calloc<WinSize>();
+    try {
+      for (final fd in [STDOUT_FILENO, STDIN_FILENO, STDERR_FILENO]) {
+        if (ioctl(fd, _windowSizeRequest, winsize) == 0 &&
+            winsize.ref.ws_col > 0 &&
+            winsize.ref.ws_row > 0) {
+          return value(winsize.ref);
+        }
+      }
+      return null;
+    } finally {
+      calloc.free(winsize);
+    }
+  }
+
+  @override
+  int? get windowHeight => _readWindowSize((size) => size.ws_row);
+
+  @override
+  int? get windowWidth => _readWindowSize((size) => size.ws_col);
 
   @override
   int setWindowHeight(int height) {
@@ -47,8 +73,10 @@ class TermLibUnix implements TermLib {
       ..ref.c_cflag = (origTermIOS.c_cflag & ~CSIZE) | CS8
       ..ref.c_lflag = origTermIOS.c_lflag & ~(ECHO | ICANON | IEXTEN | ISIG)
       ..ref.c_cc = origTermIOS.c_cc
-      ..ref.c_cc[VMIN] = 0 // VMIN -- return each byte, or 0 for timeout
-      ..ref.c_cc[VTIME] = 1 // VTIME -- 100ms timeout (unit is 1/10s)
+      ..ref.c_cc[VMIN] =
+          0 // VMIN -- return each byte, or 0 for timeout
+      ..ref.c_cc[VTIME] =
+          1 // VTIME -- 100ms timeout (unit is 1/10s)
       ..ref.c_ispeed = origTermIOS.c_ispeed
       ..ref.c_oflag = origTermIOS.c_ospeed;
 
@@ -74,6 +102,7 @@ class TermLibUnix implements TermLib {
     tcsetattr = _stdlib.lookupFunction<TCSetAttrNative, TCSetAttrDart>(
       'tcsetattr',
     );
+    ioctl = _stdlib.lookupFunction<IOCtlNative, IOCtlDart>('ioctl');
 
     // store console mode settings so we can return them again as necessary
     _origTermIOSPointer = calloc<TermIOS>();
