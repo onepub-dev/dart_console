@@ -3,6 +3,7 @@
 // Contains the primary API for dart_console, exposed through the `Console`
 // class.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -526,6 +527,59 @@ class Console {
     return key;
   }
 
+  /// Reads keys from the input as an asynchronous stream.
+  ///
+  /// The stream enables raw mode while it has an active listener and disables
+  /// raw mode when the subscription is cancelled or the input stream closes.
+  /// This allows console applications to update their UI while waiting for
+  /// keyboard input instead of blocking on [readKey].
+  Stream<Key> readKeys({
+    Duration escapeTimeout = const Duration(milliseconds: 100),
+  }) {
+    late StreamSubscription<int> subscription;
+    late StreamController<Key> controller;
+    Timer? escapeTimer;
+    final escapeSequence = <int>[];
+
+    controller = StreamController<Key>(
+      onListen: () {
+        rawMode = true;
+        subscription = stdin
+            .expand((bytes) => bytes)
+            .listen(
+              (codeUnit) {
+                escapeTimer?.cancel();
+                final keys = _parseKeyCodeUnit(codeUnit, escapeSequence);
+                for (final key in keys) {
+                  controller.add(key);
+                }
+                if (escapeSequence.isNotEmpty) {
+                  escapeTimer = Timer(escapeTimeout, () {
+                    controller.add(_flushEscapeSequence(escapeSequence));
+                  });
+                }
+              },
+              onError: controller.addError,
+              onDone: () {
+                escapeTimer?.cancel();
+                if (escapeSequence.isNotEmpty) {
+                  controller.add(_flushEscapeSequence(escapeSequence));
+                }
+                rawMode = false;
+                controller.close();
+              },
+            );
+      },
+      onCancel: () async {
+        escapeTimer?.cancel();
+        rawMode = false;
+        await subscription.cancel();
+      },
+    );
+
+    return controller.stream;
+  }
+
   /// Reads a line of input, handling basic keyboard navigation commands.
   ///
   /// The Dart [stdin.readLineSync()] function reads a line from the input,
@@ -678,5 +732,134 @@ class Console {
 
       if (callback != null) callback(buffer, key);
     }
+  }
+}
+
+List<Key> _parseKeyCodeUnit(int codeUnit, List<int> escapeSequence) {
+  if (escapeSequence.isNotEmpty) {
+    escapeSequence.add(codeUnit);
+    final key = _tryParseEscapeSequence(escapeSequence);
+    if (key == null) {
+      return const [];
+    }
+    escapeSequence.clear();
+    return [key];
+  }
+
+  if (codeUnit >= 0x01 && codeUnit <= 0x1a) {
+    return [Key.control(ControlCharacter.values[codeUnit])];
+  }
+  if (codeUnit == 0x1b) {
+    escapeSequence.add(codeUnit);
+    return const [];
+  }
+  if (codeUnit == 0x7f) {
+    return [Key.control(ControlCharacter.backspace)];
+  }
+  if (codeUnit == 0x00 || (codeUnit >= 0x1c && codeUnit <= 0x1f)) {
+    return [Key.control(ControlCharacter.unknown)];
+  }
+
+  return [Key.printable(String.fromCharCode(codeUnit))];
+}
+
+Key _flushEscapeSequence(List<int> escapeSequence) {
+  final key = escapeSequence.length == 1
+      ? Key.control(ControlCharacter.escape)
+      : Key.control(ControlCharacter.unknown);
+  escapeSequence.clear();
+  return key;
+}
+
+Key? _tryParseEscapeSequence(List<int> escapeSequence) {
+  if (escapeSequence.length == 2) {
+    switch (escapeSequence[1]) {
+      case 0x7f:
+        return Key.control(ControlCharacter.wordBackspace);
+      case 0x62:
+        return Key.control(ControlCharacter.wordLeft);
+      case 0x66:
+        return Key.control(ControlCharacter.wordRight);
+      case 0x5b:
+      case 0x4f:
+        return null;
+      default:
+        return Key.control(ControlCharacter.unknown);
+    }
+  }
+
+  if (escapeSequence[1] == 0x5b) {
+    return _parseControlSequenceIntroducer(escapeSequence);
+  }
+  if (escapeSequence[1] == 0x4f) {
+    return _parseSingleShiftSequence(escapeSequence[2]);
+  }
+
+  return Key.control(ControlCharacter.unknown);
+}
+
+Key? _parseControlSequenceIntroducer(List<int> escapeSequence) {
+  final codeUnit = escapeSequence[2];
+  switch (codeUnit) {
+    case 0x41:
+      return Key.control(ControlCharacter.arrowUp);
+    case 0x42:
+      return Key.control(ControlCharacter.arrowDown);
+    case 0x43:
+      return Key.control(ControlCharacter.arrowRight);
+    case 0x44:
+      return Key.control(ControlCharacter.arrowLeft);
+    case 0x48:
+      return Key.control(ControlCharacter.home);
+    case 0x46:
+      return Key.control(ControlCharacter.end);
+  }
+
+  if (codeUnit <= 0x30 || codeUnit >= 0x39) {
+    return Key.control(ControlCharacter.unknown);
+  }
+  if (escapeSequence.length == 3) {
+    return null;
+  }
+  if (escapeSequence[3] != 0x7e) {
+    return Key.control(ControlCharacter.unknown);
+  }
+
+  switch (codeUnit) {
+    case 0x31:
+      return Key.control(ControlCharacter.home);
+    case 0x33:
+      return Key.control(ControlCharacter.delete);
+    case 0x34:
+      return Key.control(ControlCharacter.end);
+    case 0x35:
+      return Key.control(ControlCharacter.pageUp);
+    case 0x36:
+      return Key.control(ControlCharacter.pageDown);
+    case 0x37:
+      return Key.control(ControlCharacter.home);
+    case 0x38:
+      return Key.control(ControlCharacter.end);
+    default:
+      return Key.control(ControlCharacter.unknown);
+  }
+}
+
+Key _parseSingleShiftSequence(int codeUnit) {
+  switch (codeUnit) {
+    case 0x48:
+      return Key.control(ControlCharacter.home);
+    case 0x46:
+      return Key.control(ControlCharacter.end);
+    case 0x50:
+      return Key.control(ControlCharacter.F1);
+    case 0x51:
+      return Key.control(ControlCharacter.F2);
+    case 0x52:
+      return Key.control(ControlCharacter.F3);
+    case 0x53:
+      return Key.control(ControlCharacter.F4);
+    default:
+      return Key.control(ControlCharacter.unknown);
   }
 }
