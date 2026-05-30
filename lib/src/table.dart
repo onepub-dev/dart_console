@@ -378,9 +378,8 @@ class Table {
       borderType == BorderType.vertical ? ' ' : _borderGlyphs.horizontalLine,
     ].join();
 
-    final horizontalLine = borderType == BorderType.vertical
-        ? ' '
-        : _borderGlyphs.horizontalLine;
+    final horizontalLine =
+        borderType == BorderType.vertical ? ' ' : _borderGlyphs.horizontalLine;
 
     return [
       if (borderColor != null) borderColor!.ansiSetForegroundColorSequence,

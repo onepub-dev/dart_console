@@ -75,8 +75,7 @@ void editorInsertChar(String char) {
     fileRows.add(char);
     renderRows.add(char);
   } else {
-    fileRows[cursorRow] =
-        fileRows[cursorRow].substring(0, cursorCol) +
+    fileRows[cursorRow] = fileRows[cursorRow].substring(0, cursorCol) +
         char +
         fileRows[cursorRow].substring(cursorCol);
   }
@@ -93,8 +92,7 @@ void editorBackspaceChar() {
   if (cursorCol == 0 && cursorRow == 0) return;
 
   if (cursorCol > 0) {
-    fileRows[cursorRow] =
-        fileRows[cursorRow].substring(0, cursorCol - 1) +
+    fileRows[cursorRow] = fileRows[cursorRow].substring(0, cursorCol - 1) +
         fileRows[cursorRow].substring(cursorCol);
     editorUpdateRenderRow(cursorRow);
     cursorCol--;
