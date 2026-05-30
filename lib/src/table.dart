@@ -299,7 +299,7 @@ class Table {
             maxLength,
             min(
               _columnWidths[column],
-              row[column].toString().stripEscapeCharacters().length,
+              row[column].toString().stripEscapeCharacters().displayWidth,
             ),
           );
         }
@@ -307,7 +307,7 @@ class Table {
         for (final row in _table) {
           maxLength = max(
             maxLength,
-            row[column].toString().stripEscapeCharacters().length,
+            row[column].toString().stripEscapeCharacters().displayWidth,
           );
         }
       }
