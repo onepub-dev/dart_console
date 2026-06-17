@@ -1,6 +1,7 @@
 # Unreleased
   - Fix #9: Query console window size through platform terminal APIs so tmux
     panes report their pane dimensions instead of the outer terminal size.
+  - Fix #5: Add `Console.readKeys()` for asynchronously streaming key input.
 
 # 5.0.0
   - *BREAKING*: Raise the minimum Dart SDK constraint to `>=3.10.0`.
