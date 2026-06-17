@@ -13,6 +13,9 @@ import 'unix/termlib_unix.dart';
 import 'win/termlib_win.dart';
 
 abstract class TermLib {
+  int? get windowHeight;
+  int? get windowWidth;
+
   int setWindowHeight(int height);
   int setWindowWidth(int width);
 

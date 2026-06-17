@@ -128,7 +128,7 @@ class Console {
   /// Returns the width of the current console window in characters.
   int get windowWidth {
     if (hasTerminal) {
-      return stdout.terminalColumns;
+      return _termlib.windowWidth ?? stdout.terminalColumns;
     } else {
       // Treat a window that has no terminal as if it is 80x25. This should be
       // more compatible with CI/CD environments.
@@ -139,7 +139,7 @@ class Console {
   /// Returns the height of the current console window in characters.
   int get windowHeight {
     if (hasTerminal) {
-      return stdout.terminalLines;
+      return _termlib.windowHeight ?? stdout.terminalLines;
     } else {
       // Treat a window that has no terminal as if it is 80x25. This should be
       // more compatible with CI/CD environments.
