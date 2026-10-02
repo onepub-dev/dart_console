@@ -1,16 +1,28 @@
 # CI architecture coverage
 
-The package declares Linux, macOS, and Windows without CPU restrictions.
-The current Dart support table lists Linux x64, ARM32, ARM64, and RISC-V;
-macOS x64 and ARM64; and Windows x64 and ARM64. IA32 is unsupported by
-current Dart. Linux here means glibc: the implementation loads libc.so.6.
+The package declares Linux, macOS, and Windows, without a documented CPU
+support matrix. Its README records tests on those operating systems; the
+changelog mentions an ARM64 compatibility fix. Neither explicitly promises
+ARM32 or RISC-V support. This workflow targets six native x64/ARM64 combinations.
+
+Dart additionally supports Linux ARM32 and RISC-V. Those are potential package
+expansion targets, not established dart_console support promises. Current Dart
+does not support IA32. Linux here means glibc: the implementation loads libc.so.6.
 
 The workflow explicitly selects six native hosted OS/CPU pairs and verifies
 stable Dart on each, plus the declared minimum Dart 3.10.0 on Linux x64.
 Unix tests execute the PTY helper in both JIT and AOT modes; Windows runs the
-remaining suite and skips the Unix-specific PTY tests.
+remaining suite and skips the Unix-specific PTY tests. Native Unix regressions
+compile `test/termios_native.c` with the system `cc` against the runner's actual
+headers. Local contributors need a C compiler (Linux build tools or macOS
+Command Line Tools) to run these tests; consumers do not need one.
 
-## Unresolved targets
+The macOS ARM64 job also runs a negative control in a temporary source copy:
+it restores the old nonvariadic ioctl signature and requires the targeted JIT
+and AOT tests to fail with an incorrect native result or a signal-killed helper.
+The checked-out production source remains unchanged.
+
+## Potential expansion targets
 
 Linux ARM32 and Linux RISC-V have no standard GitHub-hosted runner labels.
 They are not silently treated as covered by ubuntu-24.04. Completing coverage
@@ -20,12 +32,11 @@ runners. Do not run fork PR code on persistent self-hosted machines containing
 credentials. RISC-V SDK installation also requires verification beyond the
 setup-dart action's documented architecture list.
 
-Before advertising ARM32 support, correct the pre-existing TermIOS definition:
-it uses the macOS layout (44 bytes on a 32-bit ABI), while Linux glibc uses a
-60-byte struct. tcgetattr can therefore overrun the allocation on ARM32.
-The macOS layout is also incorrect for Linux 64-bit field accesses, although
-its larger allocation avoids this specific overflow. This issue predates the
-ioctl variadic fix and requires separate platform-specific termios work.
+The prior code used the macOS termios layout on Linux. Separate glibc and Darwin
+structs now correct that mismatch, and raw-mode flag masks come from libc's
+cfmakeraw. Native C regression probes verify the host headers against Dart
+fields and PTY mode restoration on the tested Unix targets. ARM32 and RISC-V
+still need actual execution before claiming package support.
 
 Workflow configuration is not evidence of a completed platform test run.
 Record actual runs and results before claiming a target passed.

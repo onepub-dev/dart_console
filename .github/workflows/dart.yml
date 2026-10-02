@@ -50,6 +50,10 @@ jobs:
       - name: Run tests
         run: dart test --concurrency=2
 
+      - name: Confirm original ioctl regression on macOS ARM64
+        if: matrix.os == 'macos-15' && matrix.arch == 'arm64'
+        run: python3 .github/scripts/check_ioctl_regression.py
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
