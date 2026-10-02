@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
@@ -94,12 +95,50 @@ int helper_matches_snapshot(int fd, const void *raw_original) {
   struct termios current;
   const struct termios *original = (const struct termios *)raw_original;
   if (tcgetattr(fd, &current) != 0) return 0;
-  if (current.c_iflag != original->c_iflag || current.c_oflag != original->c_oflag ||
-      current.c_cflag != original->c_cflag || current.c_lflag != original->c_lflag ||
-      current.c_ispeed != original->c_ispeed || current.c_ospeed != original->c_ospeed)
-    return 0;
-#if !defined(__APPLE__)
-  if (current.c_line != original->c_line) return 0;
+  int matches = 1;
+#define CHECK_TERM_FIELD(field)                                                   \
+  do {                                                                            \
+    if (current.field != original->field) {                                       \
+      fprintf(stderr, "termios restore mismatch: %s actual=0x%llx expected=0x%llx\n", \
+              #field, (unsigned long long)current.field,                         \
+              (unsigned long long)original->field);                              \
+      matches = 0;                                                                \
+    }                                                                             \
+  } while (0)
+  CHECK_TERM_FIELD(c_iflag);
+  CHECK_TERM_FIELD(c_oflag);
+  CHECK_TERM_FIELD(c_cflag);
+#if defined(__APPLE__)
+  // Darwin's tty driver sets PENDIN when restoring canonical mode; it is kernel
+  // state rather than a termios setting. See xnu bsd/kern/tty.c, lines 1313-1345:
+  // https://raw.githubusercontent.com/apple-oss-distributions/xnu/main/bsd/kern/tty.c
+  if ((current.c_lflag & ~PENDIN) != (original->c_lflag & ~PENDIN)) {
+    fprintf(stderr, "termios restore mismatch: c_lflag actual=0x%llx expected=0x%llx (ignoring Darwin PENDIN only)\n",
+            (unsigned long long)current.c_lflag,
+            (unsigned long long)original->c_lflag);
+    matches = 0;
+  }
+#else
+  CHECK_TERM_FIELD(c_lflag);
 #endif
-  return memcmp(current.c_cc, original->c_cc, NCCS) == 0;
+  CHECK_TERM_FIELD(c_ispeed);
+  CHECK_TERM_FIELD(c_ospeed);
+#undef CHECK_TERM_FIELD
+#if !defined(__APPLE__)
+  if (current.c_line != original->c_line) {
+    fprintf(stderr, "termios restore mismatch: c_line actual=0x%llx expected=0x%llx\n",
+            (unsigned long long)current.c_line,
+            (unsigned long long)original->c_line);
+    matches = 0;
+  }
+#endif
+  for (size_t i = 0; i < NCCS; ++i) {
+    if (current.c_cc[i] != original->c_cc[i]) {
+      fprintf(stderr, "termios restore mismatch: c_cc[%zu] actual=0x%llx expected=0x%llx\n",
+              i, (unsigned long long)current.c_cc[i],
+              (unsigned long long)original->c_cc[i]);
+      matches = 0;
+    }
+  }
+  return matches;
 }
