@@ -140,11 +140,12 @@ typedef TCSetAttrDart =
     int Function(int fildes, int optional_actions, Pointer<TermIOS> termios);
 
 // int ioctl(int, unsigned long, ...);
+// The winsize pointer is variadic, which matters for the macOS ARM64 ABI.
 typedef IOCtlNative =
     Int32 Function(
       Int32 fildes,
       UnsignedLong request,
-      Pointer<WinSize> winsize,
+      VarArgs<(Pointer<WinSize>,)> winsize,
     );
 typedef IOCtlDart =
     int Function(int fildes, int request, Pointer<WinSize> winsize);
