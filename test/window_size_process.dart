@@ -3,9 +3,13 @@ import 'dart:io';
 
 import 'package:dart_console/dart_console.dart';
 import 'package:dart_console/src/ffi/unix/termios.dart';
+import 'package:dart_console/src/ffi/unix/termlib_unix.dart';
 import 'package:ffi/ffi.dart';
 
 void main(List<String> args) {
+  final columns = int.parse(args[0]);
+  final rows = int.parse(args[1]);
+  final mode = args[2];
   final libc = Platform.isMacOS
       ? DynamicLibrary.open('/usr/lib/libSystem.dylib')
       : DynamicLibrary.open('libc.so.6');
@@ -37,8 +41,8 @@ void main(List<String> args) {
   final master = calloc<Int32>();
   final slave = calloc<Int32>();
   final size = calloc<WinSize>()
-    ..ref.ws_col = int.parse(args[0])
-    ..ref.ws_row = int.parse(args[1]);
+    ..ref.ws_col = columns
+    ..ref.ws_row = rows;
   var opened = false;
 
   try {
@@ -46,16 +50,63 @@ void main(List<String> args) {
       throw StateError('Could not open a pseudo-terminal');
     }
     opened = true;
-    if (dup2(slave.value, 0) == -1 || dup2(slave.value, 1) == -1) {
-      throw StateError('Could not attach the pseudo-terminal');
+    final descriptors = switch (mode) {
+      'both' => [0, 1],
+      'stdin' => [0],
+      'stdout' => [1],
+      'stderr' => [2],
+      'none' => <int>[],
+      _ => throw ArgumentError.value(mode),
+    };
+    for (final fd in descriptors) {
+      if (dup2(slave.value, fd) == -1) {
+        throw StateError('Could not attach the pseudo-terminal to $fd');
+      }
     }
 
-    final console = Console();
-    if (!console.hasTerminal) {
-      throw StateError('Expected a terminal');
+    // Query the package binding directly: Console can mask a failed ioctl
+    // by falling back to dart:io's terminal dimensions.
+    final terminal = TermLibUnix();
+    if (sizeOf<WinSize>() != 8) throw StateError('Unexpected winsize layout');
+    if (terminal.ioctl(
+          -1,
+          Platform.isMacOS ? TIOCGWINSZ_MACOS : TIOCGWINSZ_LINUX,
+          size,
+        ) !=
+        -1) {
+      throw StateError('Invalid descriptor should fail');
     }
-    // Keep stderr piped to the parent, since stdout now belongs to the PTY.
-    stderr.writeln('SIZE:${console.windowWidth}x${console.windowHeight}');
+    final expectedWidth = mode == 'none' || columns == 0 || rows == 0
+        ? null
+        : columns;
+    final expectedHeight = expectedWidth == null ? null : rows;
+    for (var i = 0; i < 100; i++) {
+      if (terminal.windowWidth != expectedWidth ||
+          terminal.windowHeight != expectedHeight) {
+        throw StateError('Package ioctl returned incorrect dimensions');
+      }
+    }
+    if (mode == 'both' && expectedWidth != null) {
+      final console = Console();
+      if (!console.hasTerminal ||
+          console.windowWidth != columns ||
+          console.windowHeight != rows) {
+        throw StateError('Console returned incorrect dimensions');
+      }
+    }
+    if (mode == 'none') {
+      final console = Console();
+      if (console.hasTerminal ||
+          console.windowWidth != 80 ||
+          console.windowHeight != 25) {
+        throw StateError('Incorrect redirected-console fallback');
+      }
+    }
+    // One output pipe always remains attached to the parent.
+    (mode == 'stderr' ? stdout : stderr).writeln(
+      'SIZE:$expectedWidth'
+      'x$expectedHeight',
+    );
   } finally {
     if (opened) {
       close(slave.value);
