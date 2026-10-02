@@ -9,6 +9,7 @@
 
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
@@ -19,7 +20,13 @@ import 'unistd.dart';
 class TermLibUnix implements TermLib {
   late final DynamicLibrary _stdlib;
 
-  late final Pointer<TermIOS> _origTermIOSPointer;
+  // Keep the snapshot in managed memory; temporary native buffers are freed
+  // on every path. A failed tcgetattr must never become a zeroed restore state.
+  Uint8List? _originalTermios;
+  late final CFMakeRawDart _cfmakeraw;
+
+  int get _termiosSize =>
+      Platform.isMacOS ? sizeOf<MacOSTermIOS>() : sizeOf<LinuxTermIOS>();
 
   late final TCGetAttrDart tcgetattr;
   late final TCSetAttrDart tcsetattr;
@@ -62,34 +69,39 @@ class TermLibUnix implements TermLib {
     return width;
   }
 
-  @override
-  void enableRawMode() {
-    final origTermIOS = _origTermIOSPointer.ref;
-
-    final newTermIOSPointer = calloc<TermIOS>()
-      ..ref.c_iflag =
-          origTermIOS.c_iflag & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
-      ..ref.c_oflag = origTermIOS.c_oflag & ~OPOST
-      ..ref.c_cflag = (origTermIOS.c_cflag & ~CSIZE) | CS8
-      ..ref.c_lflag = origTermIOS.c_lflag & ~(ECHO | ICANON | IEXTEN | ISIG)
-      ..ref.c_cc = origTermIOS.c_cc
-      ..ref.c_cc[VMIN] =
-          0 // VMIN -- return each byte, or 0 for timeout
-      ..ref.c_cc[VTIME] =
-          1 // VTIME -- 100ms timeout (unit is 1/10s)
-      ..ref.c_ispeed = origTermIOS.c_ispeed
-      ..ref.c_oflag = origTermIOS.c_ospeed;
-
-    tcsetattr(STDIN_FILENO, TCSANOW, newTermIOSPointer);
-
-    calloc.free(newTermIOSPointer);
+  void _applyTermios({required bool raw}) {
+    final original = _originalTermios;
+    if (original == null) return;
+    final buffer = calloc<Uint8>(_termiosSize);
+    try {
+      buffer.asTypedList(_termiosSize).setAll(0, original);
+      if (raw) {
+        _cfmakeraw(buffer.cast());
+        if (Platform.isMacOS) {
+          final state = buffer.cast<MacOSTermIOS>().ref;
+          state.c_cc[VMIN_MACOS] = 0;
+          state.c_cc[VTIME_MACOS] = 1;
+        } else {
+          final state = buffer.cast<LinuxTermIOS>().ref;
+          state.c_cc[VMIN_LINUX] = 0;
+          state.c_cc[VTIME_LINUX] = 1;
+        }
+      }
+      if (tcsetattr(STDIN_FILENO, TCSANOW, buffer.cast()) != 0) {
+        throw StateError(
+          'Could not ${raw ? "enable" : "restore"} terminal mode',
+        );
+      }
+    } finally {
+      calloc.free(buffer);
+    }
   }
 
   @override
-  void disableRawMode() {
-    if (nullptr == _origTermIOSPointer.cast()) return;
-    tcsetattr(STDIN_FILENO, TCSANOW, _origTermIOSPointer);
-  }
+  void enableRawMode() => _applyTermios(raw: true);
+
+  @override
+  void disableRawMode() => _applyTermios(raw: false);
 
   TermLibUnix() {
     _stdlib = Platform.isMacOS
@@ -103,9 +115,17 @@ class TermLibUnix implements TermLib {
       'tcsetattr',
     );
     ioctl = _stdlib.lookupFunction<IOCtlNative, IOCtlDart>('ioctl');
+    _cfmakeraw = _stdlib.lookupFunction<CFMakeRawNative, CFMakeRawDart>(
+      'cfmakeraw',
+    );
 
-    // store console mode settings so we can return them again as necessary
-    _origTermIOSPointer = calloc<TermIOS>();
-    tcgetattr(STDIN_FILENO, _origTermIOSPointer);
+    final buffer = calloc<Uint8>(_termiosSize);
+    try {
+      if (tcgetattr(STDIN_FILENO, buffer.cast()) == 0) {
+        _originalTermios = Uint8List.fromList(buffer.asTypedList(_termiosSize));
+      }
+    } finally {
+      calloc.free(buffer);
+    }
   }
 }

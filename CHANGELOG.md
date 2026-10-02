@@ -1,3 +1,9 @@
+# Unreleased
+- Fix the variadic ioctl binding on macOS ARM64 (mafreud, #15).
+- Use platform-specific termios layouts and libc raw-mode flags on Linux and
+  macOS; preserve terminal settings and free temporary native allocations.
+- Add native ABI and PTY regression tests and explicit x64/ARM64 CI jobs.
+
 # 5.1.0
 - Enhance table rendering and string handling for East Asian characters (#12)
 - Fix #9: query terminal window size via platform APIs (#13)

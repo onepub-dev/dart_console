@@ -106,8 +106,9 @@ class ProgressBar {
       _tickCount * _innerWidth ~/ maxValue - 1,
     );
     final remaining = _innerWidth - fractionComplete - 1;
-    final spinner =
-        showSpinner ? tickCharacters[_tickCount % tickCharacters.length] : ' ';
+    final spinner = showSpinner
+        ? tickCharacters[_tickCount % tickCharacters.length]
+        : ' ';
 
     _printProgressBar(
       '[${tickCharacters[0] * fractionComplete}$spinner${' ' * remaining}]',

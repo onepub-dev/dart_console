@@ -6,22 +6,39 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    runs-on: ${{matrix.os}}
+    name: ${{ matrix.os }} / ${{ matrix.arch }} / Dart ${{ matrix.sdk }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
-        sdk: [stable]
+        include:
+          - {os: ubuntu-24.04, arch: x64, sdk: stable}
+          - {os: ubuntu-24.04-arm, arch: arm64, sdk: stable}
+          - {os: macos-15-intel, arch: x64, sdk: stable}
+          - {os: macos-15, arch: arm64, sdk: stable}
+          - {os: windows-2025, arch: x64, sdk: stable}
+          - {os: windows-11-arm, arch: arm64, sdk: stable}
+          - {os: ubuntu-24.04, arch: x64, sdk: '3.10.0'}
+      # Linux ARM32 and RISC-V lack standard GitHub-hosted runners.
+      # See doc/ci-architectures.md for the unresolved execution requirements.
 
     steps:
       - name: Fetch sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
         with:
           sdk: ${{matrix.sdk}}
+          architecture: ${{ matrix.arch }}
 
       - name: Print Dart SDK version
         run: dart --version
@@ -29,22 +46,30 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
+      # Exercise each ABI even if a style check subsequently fails.
+      - name: Run tests
+        run: dart test --concurrency=2
+
+      - name: Confirm original ioctl regression on macOS ARM64
+        if: matrix.os == 'macos-15' && matrix.arch == 'arm64'
+        run: python3 .github/scripts/check_ioctl_regression.py
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze project source
         run: dart analyze --fatal-warnings
 
-      - name: Run tests
-        run: dart test
-
       - name: Add code coverage package
+        if: matrix.os == 'ubuntu-24.04' && matrix.sdk == 'stable'
         run: dart pub global activate coverage
 
       - name: Generate code coverage
+        if: matrix.os == 'ubuntu-24.04' && matrix.sdk == 'stable'
         run: dart pub global run coverage:test_with_coverage
 
       - name: Upload code coverage
+        if: github.event_name == 'push' && matrix.os == 'ubuntu-24.04' && matrix.sdk == 'stable'
         uses: codecov/codecov-action@v3
         with:
           files: coverage/lcov.info
