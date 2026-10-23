@@ -84,12 +84,12 @@ class Console {
   /// correct results.
   ///
   set rawMode(bool value) {
-    _isRawMode = value;
     if (value) {
       _termlib.enableRawMode();
     } else {
       _termlib.disableRawMode();
     }
+    _isRawMode = value;
   }
 
   /// Returns whether the terminal is in raw mode.
