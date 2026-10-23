@@ -1,5 +1,5 @@
-# Unreleased
-- Fix the variadic ioctl binding on macOS ARM64 (mafreud, #15).
+# 5.1.1
+- Fix the variadic ioctl binding on macOS ARM64 (mafreud, #15; fixes #17).
 - Use platform-specific termios layouts and libc raw-mode flags on Linux and
   macOS; preserve terminal settings and free temporary native allocations.
 - Add native ABI and PTY regression tests and explicit x64/ARM64 CI jobs.
