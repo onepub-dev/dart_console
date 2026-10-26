@@ -17,6 +17,7 @@ import '../termlib.dart';
 class TermLibWindows implements TermLib {
   late final HANDLE inputHandle;
   late final HANDLE outputHandle;
+  int? _originalInputMode;
 
   int? _readWindowSize(int Function(CONSOLE_SCREEN_BUFFER_INFO info) value) {
     final pBufferInfo = calloc<CONSOLE_SCREEN_BUFFER_INFO>();
@@ -54,26 +55,27 @@ class TermLibWindows implements TermLib {
 
   @override
   void enableRawMode() {
-    final dwMode =
-        (~ENABLE_ECHO_INPUT) &
-        (~ENABLE_PROCESSED_INPUT) &
-        (~ENABLE_LINE_INPUT) &
-        (~ENABLE_WINDOW_INPUT);
-    SetConsoleMode(inputHandle, CONSOLE_MODE(dwMode));
+    final original = _originalInputMode;
+    if (original == null) return; // Input may be redirected rather than a TTY.
+    final raw =
+        (original | ENABLE_EXTENDED_FLAGS | ENABLE_VIRTUAL_TERMINAL_INPUT) &
+        ~(ENABLE_ECHO_INPUT |
+            ENABLE_PROCESSED_INPUT |
+            ENABLE_LINE_INPUT |
+            ENABLE_WINDOW_INPUT |
+            ENABLE_QUICK_EDIT_MODE);
+    if (!SetConsoleMode(inputHandle, CONSOLE_MODE(raw)).value) {
+      throw StateError('Could not enable raw terminal mode');
+    }
   }
 
   @override
   void disableRawMode() {
-    final dwMode =
-        ENABLE_ECHO_INPUT &
-        ENABLE_EXTENDED_FLAGS &
-        ENABLE_INSERT_MODE &
-        ENABLE_LINE_INPUT &
-        ENABLE_MOUSE_INPUT &
-        ENABLE_PROCESSED_INPUT &
-        ENABLE_QUICK_EDIT_MODE &
-        ENABLE_VIRTUAL_TERMINAL_INPUT;
-    SetConsoleMode(inputHandle, dwMode);
+    final original = _originalInputMode;
+    if (original == null) return;
+    if (!SetConsoleMode(inputHandle, CONSOLE_MODE(original)).value) {
+      throw StateError('Could not restore terminal mode');
+    }
   }
 
   void hideCursor() {
@@ -146,5 +148,13 @@ class TermLibWindows implements TermLib {
   TermLibWindows() {
     outputHandle = GetStdHandle(STD_OUTPUT_HANDLE).value;
     inputHandle = GetStdHandle(STD_INPUT_HANDLE).value;
+    final mode = calloc<Uint32>();
+    try {
+      if (GetConsoleMode(inputHandle, mode).value) {
+        _originalInputMode = mode.value;
+      }
+    } finally {
+      calloc.free(mode);
+    }
   }
 }

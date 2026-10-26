@@ -187,44 +187,31 @@ class Console {
   ///
   ///
   Coordinate? get cursorPosition {
-    rawMode = true;
-    stdout.write(ansiDeviceStatusReportCursorPosition);
-    // returns a Cursor Position Report result in the form <ESC>[24;80R
-    // which we have to parse apart, unfortunately
-    var result = '';
-    var i = 0;
-
-    // avoid infinite loop if we're getting a bad result
-    while (i < 16) {
-      final readByte = stdin.readByteSync();
-
-      if (readByte == -1) break; // headless console may not report back
-
-      // ignore: use_string_buffers
-      result += String.fromCharCode(readByte);
-      if (result.endsWith('R')) break;
-      i++;
-    }
-    rawMode = false;
-
-    if (result.isEmpty || result[0] != '\x1b') {
-      print(' result: $result  result.length: ${result.length}');
-      return null;
-    }
-
-    result = result.substring(2, result.length - 1);
-    final coords = result.split(';');
-
-    if (coords.length != 2) {
-      print(' coords.length: ${coords.length}');
-      return null;
-    }
-    if ((int.tryParse(coords[0]) != null) &&
-        (int.tryParse(coords[1]) != null)) {
-      return Coordinate(int.parse(coords[0]) - 1, int.parse(coords[1]) - 1);
-    } else {
-      print(' coords[0]: ${coords[0]}   coords[1]: ${coords[1]}');
-      return null;
+    final wasRaw = rawMode;
+    if (!wasRaw) rawMode = true;
+    try {
+      stdout.write(ansiDeviceStatusReportCursorPosition);
+      // A terminal reports <ESC>[row;colR. Stop at EOF or after a short,
+      // bounded response rather than echoing untrusted terminal input.
+      final result = StringBuffer();
+      for (var i = 0; i < 16; i++) {
+        final readByte = stdin.readByteSync();
+        if (readByte == -1) break;
+        result.writeCharCode(readByte);
+        if (readByte == 0x52) break; // 'R'
+      }
+      final response = result.toString();
+      if (!response.startsWith('\x1b[') || !response.endsWith('R')) {
+        return null;
+      }
+      final coords = response.substring(2, response.length - 1).split(';');
+      if (coords.length != 2) return null;
+      final row = int.tryParse(coords[0]);
+      final col = int.tryParse(coords[1]);
+      if (row == null || col == null || row < 1 || col < 1) return null;
+      return Coordinate(row - 1, col - 1);
+    } finally {
+      if (!wasRaw) rawMode = false;
     }
   }
 
@@ -381,13 +368,29 @@ class Console {
   /// basic key handling can be found in the `example/command_line.dart`
   /// file in the package source code.
   Key readKey() {
+    final wasRaw = rawMode;
+    if (!wasRaw) rawMode = true;
+    try {
+      return _readKeyRaw();
+    } finally {
+      if (!wasRaw) rawMode = false;
+    }
+  }
+
+  Key _readKeyRaw() {
     Key key;
     int charCode;
     var codeUnit = 0;
 
-    rawMode = true;
     while (codeUnit <= 0) {
       codeUnit = stdin.readByteSync();
+      if (codeUnit == -1) {
+        // Unix raw terminals use a short VTIME timeout, which also returns
+        // -1. Only redirected input can reliably signal EOF this way.
+        if (!stdin.hasTerminal) {
+          return Key.control(ControlCharacter.ctrlD);
+        }
+      }
     }
 
     if (codeUnit >= 0x01 && codeUnit <= 0x1a) {
@@ -402,7 +405,6 @@ class Console {
 
       charCode = stdin.readByteSync();
       if (charCode == -1) {
-        rawMode = false;
         return key;
       }
       escapeSequence.add(String.fromCharCode(charCode));
@@ -412,7 +414,6 @@ class Console {
       } else if (escapeSequence[0] == '[') {
         charCode = stdin.readByteSync();
         if (charCode == -1) {
-          rawMode = false;
           return key;
         }
         escapeSequence.add(String.fromCharCode(charCode));
@@ -441,7 +442,6 @@ class Console {
                 escapeSequence[1].codeUnits[0] < '9'.codeUnits[0]) {
               charCode = stdin.readByteSync();
               if (charCode == -1) {
-                rawMode = false;
                 return key;
               }
               escapeSequence.add(String.fromCharCode(charCode));
@@ -481,7 +481,6 @@ class Console {
       } else if (escapeSequence[0] == 'O') {
         charCode = stdin.readByteSync();
         if (charCode == -1) {
-          rawMode = false;
           return key;
         }
         escapeSequence.add(String.fromCharCode(charCode));
@@ -522,7 +521,6 @@ class Console {
       // assume other characters are printable
       key = Key.printable(String.fromCharCode(codeUnit));
     }
-    rawMode = false;
     return key;
   }
 
@@ -539,39 +537,46 @@ class Console {
     late StreamController<Key> controller;
     Timer? escapeTimer;
     final escapeSequence = <int>[];
+    var wasRaw = false;
 
     controller = StreamController<Key>(
       onListen: () {
-        rawMode = true;
-        subscription = stdin
-            .expand((bytes) => bytes)
-            .listen(
-              (codeUnit) {
-                escapeTimer?.cancel();
-                final keys = _parseKeyCodeUnit(codeUnit, escapeSequence);
-                for (final key in keys) {
-                  controller.add(key);
-                }
-                if (escapeSequence.isNotEmpty) {
-                  escapeTimer = Timer(escapeTimeout, () {
+        wasRaw = rawMode;
+        if (!wasRaw) rawMode = true;
+        try {
+          subscription = stdin
+              .expand((bytes) => bytes)
+              .listen(
+                (codeUnit) {
+                  escapeTimer?.cancel();
+                  final keys = _parseKeyCodeUnit(codeUnit, escapeSequence);
+                  for (final key in keys) {
+                    controller.add(key);
+                  }
+                  if (escapeSequence.isNotEmpty) {
+                    escapeTimer = Timer(escapeTimeout, () {
+                      controller.add(_flushEscapeSequence(escapeSequence));
+                    });
+                  }
+                },
+                onError: controller.addError,
+                onDone: () {
+                  escapeTimer?.cancel();
+                  if (escapeSequence.isNotEmpty) {
                     controller.add(_flushEscapeSequence(escapeSequence));
-                  });
-                }
-              },
-              onError: controller.addError,
-              onDone: () {
-                escapeTimer?.cancel();
-                if (escapeSequence.isNotEmpty) {
-                  controller.add(_flushEscapeSequence(escapeSequence));
-                }
-                rawMode = false;
-                controller.close();
-              },
-            );
+                  }
+                  if (!wasRaw) rawMode = false;
+                  controller.close();
+                },
+              );
+        } catch (_) {
+          if (!wasRaw) rawMode = false;
+          rethrow;
+        }
       },
       onCancel: () async {
         escapeTimer?.cancel();
-        rawMode = false;
+        if (!wasRaw) rawMode = false;
         await subscription.cancel();
       },
     );

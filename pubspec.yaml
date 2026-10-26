@@ -1,5 +1,5 @@
 name: dart_console
-version: 5.1.1
+version: 5.1.2
 homepage: https://github.com/onepub-dev/dart_console
 description: A helper library for command-line applications that need more control over input/output than the standard library provides.
 environment:

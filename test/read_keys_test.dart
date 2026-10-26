@@ -6,6 +6,26 @@ import 'package:test/test.dart';
 
 void main() {
   group('readKeys subprocess', () {
+    test('readKey returns at redirected-input EOF', () async {
+      final process = await Process.start(Platform.resolvedExecutable, [
+        'example/keys.dart',
+      ], workingDirectory: Directory.current.path);
+      try {
+        await process.stdin.close();
+        final eofLine = await process.stdout
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .firstWhere((line) => line.contains('ControlCharacter.ctrlD'))
+            .timeout(const Duration(seconds: 10));
+        expect(eofLine, 'ControlCharacter.ctrlD');
+      } finally {
+        process.kill(
+          Platform.isWindows ? ProcessSignal.sigterm : ProcessSignal.sigkill,
+        );
+        await process.exitCode;
+      }
+    });
+
     test('readKeys streams printable and control keys', () async {
       final keys = await _readKeys([0x61, 0x03, 0x7f], expectedKeys: 3);
 

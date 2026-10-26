@@ -1,3 +1,10 @@
+# 5.1.2
+- Restore the original Windows terminal input mode after raw key reads.
+- Restore raw mode on key-read errors and preserve an existing raw mode.
+- Stop synchronous key reads at redirected-input EOF without treating Unix
+  terminal timeouts as EOF. Discard malformed cursor reports without printing
+  terminal-controlled content.
+
 # 5.1.1
 - Fix the variadic ioctl binding on macOS ARM64 (mafreud, #15; fixes #17).
 - Use platform-specific termios layouts and libc raw-mode flags on Linux and
